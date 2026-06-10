@@ -7,6 +7,7 @@ import { auth } from '@/firebase/config';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import Link from 'next/link';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -70,7 +71,18 @@ export default function LoginPage() {
             >
               {loading ? 'Ingresando...' : 'Iniciar Sesión'}
             </Button>
+
+            
           </form>
+          
+<div className="mt-6 text-center text-sm text-zinc-500">
+  ¿No tienes cuenta?{' '}
+  <Link href="/register" className="text-emerald-500 hover:underline">
+    Regístrate gratis
+  </Link>
+</div>
+
+
         </CardContent>
       </Card>
     </div>
