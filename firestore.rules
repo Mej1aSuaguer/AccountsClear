@@ -1,0 +1,86 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ==================== REGLAS BASE ====================
+    match /bars/{barId} {
+      allow read, write: if isOwner(barId);
+    }
+
+    // Usuarios - Solo el dueño del bar puede gestionar usuarios
+    match /users/{userId} {
+      allow read: if request.auth != null && 
+                   (request.auth.uid == userId || isOwnerFromUser(request.auth.uid));
+      
+      allow create: if request.auth != null;
+      
+      allow update, delete: if request.auth != null && 
+                            (request.auth.uid == userId || isOwnerFromUser(request.auth.uid));
+    }
+
+    // Mesas
+    match /tables/{tableId} {
+      allow read, write: if isBarMember(getBarIdFromTable(tableId));
+    }
+
+    // Productos
+    match /products/{productId} {
+      allow read, write: if isBarMember(getBarIdFromProduct(productId));
+    }
+
+    // Comandas (Orders)
+    match /orders/{orderId} {
+      allow read, write: if isBarMember(getBarIdFromOrder(orderId));
+    }
+
+    // Turnos
+    match /turnos/{turnoId} {
+      allow read, write: if isBarMember(getBarIdFromTurno(turnoId));
+    }
+
+    // ==================== FUNCIONES AUXILIARES ====================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Verifica si el usuario actual es Owner del bar
+    function isOwner(barId) {
+      let user = get(/databases/$(database)/documents/users/$(request.auth.uid));
+      return user.data.barId == barId && user.data.role == 'owner';
+    }
+
+    // Verifica si el usuario pertenece al mismo bar
+    function isBarMember(barId) {
+      let user = get(/databases/$(database)/documents/users/$(request.auth.uid));
+      return user.data.barId == barId;
+    }
+
+    function isOwnerFromUser(userId) {
+      let user = get(/databases/$(database)/documents/users/$(userId));
+      return user.data.role == 'owner';
+    }
+
+    // Funciones helper para extraer barId de documentos
+    function getBarIdFromTable(tableId) {
+      let table = get(/databases/$(database)/documents/tables/$(tableId));
+      return table.data.barId;
+    }
+
+    function getBarIdFromProduct(productId) {
+      let product = get(/databases/$(database)/documents/products/$(productId));
+      return product.data.barId;
+    }
+
+    function getBarIdFromOrder(orderId) {
+      let order = get(/databases/$(database)/documents/orders/$(orderId));
+      return order.data.barId;
+    }
+
+    function getBarIdFromTurno(turnoId) {
+      let turno = get(/databases/$(database)/documents/turnos/$(turnoId));
+      return turno.data.barId;
+    }
+  }
+}
