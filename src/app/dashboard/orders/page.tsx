@@ -64,6 +64,42 @@ export default function OrdersPage() {
     };
   }, [userData?.barId]);
 
+  // EFECTO 1: Cargar productos y comandas en tiempo real (Este ya lo tienes)
+  useEffect(() => {
+    if (!userData?.barId) return;
+    const productsQuery = query(
+      collection(db, 'products'),
+      where('barId', '==', userData.barId),
+      where('isActive', '==', true)
+    );
+    const ordersQuery = query(
+      collection(db, 'orders'),
+      where('barId', '==', userData.barId)
+    );
+    const unsubProducts = onSnapshot(productsQuery, (snap) => {
+      setProducts(snap.docs.map(d => ({ id: d.id, ...d.data() })) as Product[]);
+    });
+    const unsubOrders = onSnapshot(ordersQuery, (snap) => {
+      const data = snap.docs.map(d => ({ id: d.id, ...d.data() })) as Order[];
+      data.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+      setOrders(data);
+      setLoading(false);
+    });
+    return () => {
+      unsubProducts();
+      unsubOrders();
+    };
+  }, [userData?.barId]);
+
+  // EFECTO 2: ¡PEGA ESTE NUEVO BLOQUE AQUÍ ABAJO!
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tableFromUrl = params.get('table');
+    if (tableFromUrl) {
+      setSelectedTableId(tableFromUrl);
+    }
+  }, []);
+
   const addItemToOrder = (product: Product) => {
     const existing = selectedItems.findIndex(item => item.productId === product.id);
     
