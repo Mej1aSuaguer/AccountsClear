@@ -1,6 +1,8 @@
 // src/app/dashboard/_components/Sidebar.tsx
 'use client';
 
+import { Package } from 'lucide-react';
+
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
@@ -23,6 +25,8 @@ const navItems = [
   { href: '/dashboard/pos', icon: Users, label: 'Caja' },
   { href: '/dashboard/reports', icon: BarChart3, label: 'Reportes' },
   { href: '/dashboard/settings', icon: Settings, label: 'Configuración' },
+  { href: '/dashboard/products', icon: Package, label: 'Menú / Productos' },
+  
 ];
 
 export function Sidebar() {
@@ -37,6 +41,7 @@ export function Sidebar() {
 
       <nav className="flex-1 p-4 space-y-1">
         {navItems.map((item) => {
+          
           const isActive = pathname === item.href;
           return (
             <Link key={item.href} href={item.href}>
@@ -52,6 +57,7 @@ export function Sidebar() {
               </Button>
             </Link>
           );
+          
         })}
       </nav>
 
