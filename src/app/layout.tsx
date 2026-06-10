@@ -1,11 +1,9 @@
 // src/app/layout.tsx
 import type { Metadata } from 'next';
-import { Inter, Geist } from 'next/font/google';
+import { Inter } from 'next/font/google';
 import './globals.css';
 import { FirebaseProvider } from '@/firebase/provider';
-import { cn } from "@/lib/utils";
-
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
+import { AuthProvider } from '@/firebase/auth-provider';
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -26,10 +24,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es" className={cn("dark", "font-sans", geist.variable)}>
+    <html lang="es" className="dark">
       <body className={`${inter.variable} antialiased bg-zinc-950 text-zinc-100`}>
         <FirebaseProvider>
-          {children}
+          <AuthProvider>
+            {children}
+          </AuthProvider>
         </FirebaseProvider>
       </body>
     </html>
