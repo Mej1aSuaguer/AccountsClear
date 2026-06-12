@@ -10,7 +10,8 @@ import {
   onSnapshot, 
   updateDoc, 
   doc, 
-  serverTimestamp 
+  serverTimestamp,
+  getDocs
 } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { Order } from '@/lib/types';
@@ -51,19 +52,37 @@ export default function PosPage() {
     return () => unsubscribe();
   }, [userData?.barId]);
 
-  const closeOrder = async (orderId: string) => {
-    if (!confirm('¿Deseas cerrar esta cuenta y marcar la mesa como libre?')) return;
+  const closeOrder = async (orderId: string, tableId: string) => {
+  if (!confirm('¿Cerrar cuenta y liberar mesa?')) return;
 
-    await updateDoc(doc(db, 'orders', orderId), {
-      status: 'closed',
-      closedAt: serverTimestamp(),
-      closedBy: userData?.uid,
+  await updateDoc(doc(db, 'orders', orderId), {
+    status: 'closed',
+    closedAt: serverTimestamp(),
+    closedBy: userData?.uid,
+    updatedAt: serverTimestamp()
+  });
+
+  // Liberar mesa
+  const tablesQ = query(
+    collection(db, 'tables'),
+    where('barId', '==', userData!.barId),
+    where('number', '==', Number(tableId))
+  );
+
+  const snapshot = await getDocs(tablesQ);
+  if (!snapshot.empty) {
+    const tableDoc = snapshot.docs[0];
+    await updateDoc(doc(db, 'tables', tableDoc.id), {
+      status: 'free',
+      currentOrderId: null,
+      occupiedSince: null,
+      occupiedBy: null,
       updatedAt: serverTimestamp()
     });
+  }
 
-    // Aquí en el futuro se actualizaría también el estado de la mesa a 'free'
-    alert('¡Cuenta cerrada exitosamente! Propina registrada.');
-  };
+  alert('✅ Cuenta cerrada y mesa liberada correctamente');
+};
 
   if (loading) return <p>Cargando punto de venta...</p>;
 
@@ -134,10 +153,10 @@ export default function PosPage() {
                   </p>
                 )}
 
-                <Button 
-                  onClick={() => closeOrder(order.id)}
-                  className="w-full h-12 text-lg bg-emerald-600 hover:bg-emerald-700 mt-4"
-                >
+                <Button
+  onClick={() => closeOrder(order.id, order.tableId)} // <-- ¡Pásale order.tableId como segundo argumento!
+  className="w-full h-12 text-lg bg-emerald-600 hover:bg-emerald-700 mt-4"
+>
                   <CheckCircle className="w-5 h-5 mr-2" />
                   Cerrar Cuenta y Liberar Mesa
                 </Button>

@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/firebase/provider';
+
 import { 
   collection, 
   query, 
@@ -13,7 +14,8 @@ import {
   addDoc, 
   updateDoc, 
   doc, 
-  serverTimestamp 
+  serverTimestamp,
+  getDocs 
 } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { Order, OrderItem, Product } from '@/lib/types';
@@ -125,7 +127,9 @@ export default function OrdersPage() {
   const createOrder = async () => {
     if (!userData?.barId || !selectedTableId || selectedItems.length === 0) {
       alert("Selecciona una mesa y al menos un producto");
+      
       return;
+      
     }
 
     const subtotal = selectedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -148,6 +152,7 @@ export default function OrdersPage() {
     };
 
     await addDoc(collection(db, 'orders'), newOrder);
+    await markTableAsOccupied(selectedTableId);
 
     // Limpiar formulario
     setSelectedItems([]);
@@ -163,7 +168,30 @@ export default function OrdersPage() {
     });
   };
 
+  
+
   // ... (mantener las funciones getStatusBadge y renderizado de comandas existentes)
+
+  const markTableAsOccupied = async (tableNumber: string) => {
+  // Buscar la mesa por número
+  const tablesQ = query(
+    collection(db, 'tables'),
+    where('barId', '==', userData!.barId),
+    where('number', '==', Number(tableNumber))
+  );
+
+  const snapshot = await getDocs(tablesQ); // Necesitas importar getDocs
+  if (!snapshot.empty) {
+    const tableDoc = snapshot.docs[0];
+    await updateDoc(doc(db, 'tables', tableDoc.id), {
+      status: 'occupied',
+      occupiedSince: serverTimestamp(),
+      occupiedBy: userData!.uid,
+      currentOrderId: 'active', // placeholder
+      updatedAt: serverTimestamp()
+    });
+  }
+};
 
   return (
     <div className="space-y-8">
